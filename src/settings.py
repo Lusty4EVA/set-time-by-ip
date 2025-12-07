@@ -6,7 +6,7 @@ WORLDTIMEAPI_BY_IP = "http://worldtimeapi.org/api/ip/{ip}"
 
 DRY_RUN = True
 FORCE_APPLY = False
-USE_SELENIUM_FALLBACK = True # change to True if ipapi is being gay
+USE_SELENIUM_FALLBACK = True # change to True if ipapi is being gay wait is it already true??
 VERBOSE = True
 
 IANA_TO_WINDOWS = {

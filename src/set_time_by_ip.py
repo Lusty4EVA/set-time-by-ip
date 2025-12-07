@@ -1,26 +1,30 @@
-#!/usr/bin/env python3
+
 """
 set_time_by_ip.py
 
-Detect the machine's public IP, resolve its IANA timezone, and optionally apply
+Detect the your pc's public IP resolve its IANA timezone and optionally apply
 that timezone to the host OS (Linux via timedatectl, Windows via tzutil).
 
 IMPORTANT read below
 
 
 Safety & usage:
- - This script **can change your system timezone**. By default it runs in DRY-RUN mode.
+ - This script can change your system timezone By default it runs in DRY-RUN mode.
  - To actually apply changes pass `--apply`. To skip the interactive prompt pass `--force`.
  - On Linux you will likely need `sudo` to run timedatectl.
  - On Windows you must run the script in an elevated (Administrator) prompt to run tzutil.
- - The script caches ip -> timezone mappings to avoid repeatedly hitting free API limits.
- - Configure behavior in `settings.py` (project scaffold includes a settings file).
-
+ - The script caches ip timezone mappings to avoid repeatedly hitting free API limits.
+ - Configure behavior in 'settings.py' (project scaffold includes a settings file).
+ - Settings are expected to exist in settings.py in the same directory.
 Example:
   python set_time_by_ip.py                          # dry-run (default)
   python set_time_by_ip.py --apply                  # actually apply (will ask confirmation) yes or no
   python set_time_by_ip.py --apply --force          # apply without confirmation
 """
+
+
+
+# import gay
 import re
 import sys
 import platform
@@ -32,8 +36,7 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-# Settings are expected to exist in settings.py in the same directory.
-# This keeps configuration separate from logic (API URLs, mappings, toggles, cache path).
+
 try:
         from settings import (
         IPIFY_URL,
@@ -48,8 +51,6 @@ try:
         CACHE_FILE,
         VERBOSE,
         USE_SELENIUM_FALLBACK,
-        # optionally set CHROME_BINARY in settings if Chrome is non-standard
-        # CHROME_BINARY,
     )
 
 except Exception as e:
@@ -62,7 +63,6 @@ except Exception as e:
 def looks_like_iana(tz: str) -> bool:
     if not tz or not isinstance(tz, str):
         return False
-    # simple heuristic: contains a slash and letters (not digits-only)
     return bool(re.match(r'^[A-Za-z_]+\/[A-Za-z_+\-]+', tz))
 
 
@@ -88,7 +88,7 @@ def save_cache(d: dict):
         verbose_print("Failed to save cache:", exc)
 
 
-# --------------------------- Network helpers ---------------------------
+
 def get_public_ip(timeout=REQUEST_TIMEOUT) -> str or None:
     try:
         r = requests.get(IPIFY_URL, timeout=timeout)
@@ -97,6 +97,7 @@ def get_public_ip(timeout=REQUEST_TIMEOUT) -> str or None:
     except Exception as e:
         verbose_print("Failed to get public IP:", e)
         return None
+
 
 
 def _fetch_with_retries(url: str, timeout: int = REQUEST_TIMEOUT, max_retries: int = MAX_RETRIES):
@@ -112,7 +113,7 @@ def _fetch_with_retries(url: str, timeout: int = REQUEST_TIMEOUT, max_retries: i
                 time_module.sleep(backoff)
                 backoff *= 2
                 continue
-            # other non-200 -> return response for caller to inspect
+           
             return r
         except Exception as e:
             last_exc = e
@@ -125,6 +126,7 @@ def _fetch_with_retries(url: str, timeout: int = REQUEST_TIMEOUT, max_retries: i
     return None
 
 
+
 def get_iana_timezone_for_ip(ip: str) -> str or None:
     """Try ipapi then worldtimeapi fallback. Return IANA tz or None."""
     if not ip:
@@ -135,7 +137,6 @@ def get_iana_timezone_for_ip(ip: str) -> str or None:
         verbose_print("Cache hit for IP", ip)
         return cache[ip]
 
-    # Try ipapi (plain text timezone)
     url_ipapi = IPAPI_TZ_BY_IP.format(ip=ip)
     try:
         r = _fetch_with_retries(url_ipapi)
@@ -148,7 +149,8 @@ def get_iana_timezone_for_ip(ip: str) -> str or None:
     except Exception as e:
         verbose_print("ipapi fetch error:", e)
 
-    # Fallback to worldtimeapi
+
+
     try:
         url_wt = WORLDTIMEAPI_BY_IP.format(ip=ip)
         r2 = _fetch_with_retries(url_wt)
@@ -165,14 +167,11 @@ def get_iana_timezone_for_ip(ip: str) -> str or None:
     except Exception as e:
         verbose_print("worldtimeapi fetch error:", e)
 
-    # Selenium fallback (last resort)
+
     if USE_SELENIUM_FALLBACK:
         try:
             verbose_print("Attempting Selenium fallback (proxy6.net)...")
-            # import here to avoid requiring selenium unless needed
             from selenium_fallback import get_timezone_by_selenium
-
-            # If you set CHROME_BINARY in settings.py, pass it: get_timezone_by_selenium(CHROME_BINARY)
             tz3 = get_timezone_by_selenium()
             if tz3:
                 cache[ip] = tz3
@@ -187,11 +186,10 @@ def get_iana_timezone_for_ip(ip: str) -> str or None:
 
 
 
-# --------------------------- OS operations -----------------------------
+
 def set_timezone_linux(iana_tz: str) -> bool:
     """Set timezone on Linux using timedatectl. Requires sudo."""
     try:
-        # Validate tz exists locally
         try:
             ZoneInfo(iana_tz)
         except ZoneInfoNotFoundError:
@@ -213,7 +211,6 @@ def set_timezone_windows(iana_tz: str) -> bool:
         verbose_print("No Windows mapping for IANA tz", iana_tz)
         return False
     try:
-        # tzutil expects the display name. Using shell=True to allow tzutil builtin behavior.
         subprocess.run(["tzutil", "/s", win_name], check=True, shell=True)
         return True
     except subprocess.CalledProcessError as e:
@@ -221,7 +218,8 @@ def set_timezone_windows(iana_tz: str) -> bool:
         return False
 
 
-# --------------------------- Main flow --------------------------------
+
+
 def main(argv: list) -> int:
     dry_run = DRY_RUN
     force = FORCE_APPLY
