@@ -1,0 +1,12 @@
+# Core dependencies
+requests
+
+# Timezone handling (Python 3.9+ has zoneinfo built-in,
+# but these help on Windows where the OS tz database may be missing)
+tzdata
+
+# Optional: only needed if you plan to use the selenium fallback (remove '#')
+selenium
+
+# Optional: only needed for Windows API (SetSystemTime / tzutil helpers) (remove '#')
+pywin32
