@@ -1,5 +1,15 @@
 # set-time-by-ip
 
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-success)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Status](https://img.shields.io/badge/Status-Stable-brightgreen)
+![Issues](https://img.shields.io/github/issues/Lusty4EVA/set-time-by-ip)
+![Stars](https://img.shields.io/github/stars/Lusty4EVA/set-time-by-ip?style=social)
+
+
+
+
 A small tool that detects your public IP, resolves the correct IANA timezone for that IP, and optionally applies the timezone to your operating system.
 
 The script runs in dry-run mode by default. Use `--apply` to make actual changes. On Linux you may need sudo. On Windows you must run in an elevated command prompt.
